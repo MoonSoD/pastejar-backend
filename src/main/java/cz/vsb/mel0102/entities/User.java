@@ -10,6 +10,8 @@ import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -31,22 +33,41 @@ public class User implements IEntity, Serializable {
 
     public boolean activated;
 
-    public static User fromRow(ResultSet rs)  {
+    public List<Paste> pastes;
+
+    public static User fromRow(ResultSet rs, boolean withPastes)  {
+        User user = null;
         try {
-            return User.builder()
-                    .id(rs.getLong("id"))
-                    .username(rs.getString("username"))
-                    .email(rs.getString("email"))
-                    .password(rs.getString("password"))
-                    .createdAt(rs.getTimestamp("createdAt"))
-                    .updatedAt(rs.getTimestamp("updatedAt"))
-                    .activated(rs.getBoolean("activated"))
+            user = User.builder()
+                    .id(rs.getLong("User.id"))
+                    .username(rs.getString("User.username"))
+                    .email(rs.getString("User.email"))
+                    .password(rs.getString("User.password"))
+                    .createdAt(rs.getTimestamp("User.createdAt"))
+                    .updatedAt(rs.getTimestamp("User.updatedAt"))
+                    .activated(rs.getBoolean("User.activated"))
+                    .pastes(new ArrayList<>())
                     .build();
+
+            if (withPastes) {
+                do {
+                    Paste paste = Paste.fromRowExplicit(rs);
+                    user.pastes.add(paste);
+                } while (rs.next());
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        return null;
+        return user;
+    }
+
+    public static User fromRow(ResultSet rs) {
+        return fromRow(rs, true);
+    }
+
+    public static User fromRowWithoutPastes(ResultSet rs) {
+        return fromRow(rs, false);
     }
 
     @Override

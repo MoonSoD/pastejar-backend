@@ -16,12 +16,26 @@ public class PostgreUserRepository implements IUserRepository {
     @SneakyThrows
     @Override
     public Optional<User> findByUsername(String username) {
-        var sql = "SELECT * FROM \"User\" WHERE username = ?";
+        var sql = """
+        SELECT "User".id as "User.id",
+               "User".username as "User.username",
+               "User".email as "User.email",
+               "User".password as "User.password",
+               "User".createdAt as "User.createdAt",
+               "User".updatedAt as "User.updatedAt",
+               "User".activated as "User.activated",
+               "Paste".id as "Paste.id",
+               "Paste".content as "Paste.content",
+               "Paste".userid as "Paste.userId",
+               "Paste".createdat as "Paste.createdAt",
+               "Paste".updatedat as "Paste.updatedAt"
+        FROM "User" 
+        LEFT JOIN "Paste" ON "Paste"."userid" = "User"."id" 
+        WHERE "username" = ?
+        """;
         return Optional.ofNullable(
                 executor.executeQuerySingle(sql,
-                        ps -> {
-                            ps.setString(1, username);
-                        },
+                        ps -> ps.setString(1, username),
                         User::fromRow
                 )
         );
@@ -79,7 +93,11 @@ public class PostgreUserRepository implements IUserRepository {
     @SneakyThrows
     @Override
     public Optional<User> findById(long id) {
-        var sql = "SELECT * FROM \"User\" WHERE id = ?";
+        var sql = """
+                SELECT * FROM "User"
+                INNER JOIN "Paste" on "Paste".userId = "User".id"
+                WHERE id = ?
+        """;
         return Optional.ofNullable(
                 executor.executeQuerySingle(sql,
                         ps -> {
